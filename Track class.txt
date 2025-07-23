@@ -1,0 +1,130 @@
+// Track class
+class Track {
+  constructor(title, artist, duration) {
+    this.title = title;
+    this.artist = artist;
+    this.duration = duration;
+  }
+
+  render() {
+    return `${this.title} - ${this.artist}`;
+  }
+}
+
+// Playlist class
+class Playlist {
+  constructor(name) {
+    this.name = name;
+    this.tracks = [];
+    this.currentIndex = 0;
+  }
+
+  addTrack(track) {
+    this.tracks.push(track);
+  }
+
+  removeTrack(index) {
+    this.tracks.splice(index, 1);
+    if (this.currentIndex >= this.tracks.length) {
+      this.currentIndex = Math.max(this.tracks.length - 1, 0);
+    }
+  }
+
+  getCurrentTrack() {
+    return this.tracks[this.currentIndex];
+  }
+
+  setCurrentTrack(index) {
+    if (index >= 0 && index < this.tracks.length) {
+      this.currentIndex = index;
+    }
+  }
+
+  nextTrack() {
+    if (this.currentIndex < this.tracks.length - 1) {
+      this.currentIndex++;
+    }
+    return this.getCurrentTrack();
+  }
+
+  previousTrack() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+    }
+    return this.getCurrentTrack();
+  }
+
+  render() {
+    return this.tracks
+      .map(
+        (t, i) => `
+      <li data-index="${i}" ${i === this.currentIndex ? 'class="current"' : ''}>
+        ${t.render()}
+        <button class="remove-btn" data-index="${i}">🗑️</button>
+      </li>`
+      )
+      .join("");
+  }
+}
+
+// Playlist UI
+class PlaylistUI {
+  constructor(playlist, containerId) {
+    this.playlist = playlist;
+    this.container = document.getElementById(containerId);
+    this.trackDisplay = document.getElementById("track-display");
+    this.bindEvents();
+  }
+
+  display() {
+    this.container.innerHTML = `<ul>${this.playlist.render()}</ul>`;
+    this.updateCurrentTrack();
+  }
+
+  updateCurrentTrack() {
+    const track = this.playlist.getCurrentTrack();
+    if (track) {
+      this.trackDisplay.textContent = `Now Playing: ${track.title} - ${track.artist}`;
+    } else {
+      this.trackDisplay.textContent = "Now Playing: —";
+    }
+  }
+
+  bindEvents() {
+    document.getElementById("next-btn").addEventListener("click", () => {
+      this.playlist.nextTrack();
+      this.display();
+    });
+
+    document.getElementById("prev-btn").addEventListener("click", () => {
+      this.playlist.previousTrack();
+      this.display();
+    });
+
+    this.container.addEventListener("click", (e) => {
+      const removeBtn = e.target.closest(".remove-btn");
+
+      if (removeBtn) {
+        const index = Number(removeBtn.dataset.index);
+        this.playlist.removeTrack(index);
+        this.display();
+        return;
+      }
+
+      const li = e.target.closest("li");
+      if (li && li.dataset.index !== undefined) {
+        this.playlist.setCurrentTrack(Number(li.dataset.index));
+        this.display();
+      }
+    });
+  }
+}
+
+// Init
+const playlist = new Playlist("Chill Vibes");
+playlist.addTrack(new Track("Numb", "Linkin Park", "3:07"));
+playlist.addTrack(new Track("Dreams", "Fleetwood Mac", "4:14"));
+playlist.addTrack(new Track("Energy", "Drake", "4:02"));
+
+const ui = new PlaylistUI(playlist, "playlist-container");
+ui.display();
